@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Lt*08161554409
+      POSTGRES_DB: cloud_one
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    image: jumongweb/cloud_one:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud_one
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Lt*08161554409
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3030/actuator/health"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+    restart: always
+    mem_limit: 128m
+
+volumes:
+  postgres_data:
+
+#version: '3.8'
+#
+#services:
+#  app:
+#    build: .
+#    container_name: cloud_one
+#    ports:
+#      - "3030:3030"
+#    depends_on:
+#      - db
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:3030"]
+#      interval: 1m30s
+#      timeout: 10s
+#      retries: 3
+#    restart: always
+#    mem_limit: 128m
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/cloud_one
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: Lt*08161554409
+#
+#
+#  db:
+#    image: postgres:latest
+#    container_name: POSTGRES
+#    restart: always
+#    ports:
+#      - "5432:5432"
+#    environment:
+#      POSTGRES_DB: cloud_one
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: Lt*08161554409
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#
+#volumes:
+#  postgres_data:
