@@ -21,9 +21,11 @@ services:
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
     depends_on:
       - postgres
+    ports:
+      - "3030:3030"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3030/actuator/health"]
-      interval: 1m30s
+      interval: 0s
       timeout: 10s
       retries: 3
     restart: always

@@ -7,4 +7,4 @@ COPY --from=build target/*.jar cloud_one.jar
 EXPOSE 3030
 
 # Removed the problematic backtick
-ENTRYPOINT ["java", "-jar", "-Dserver.port=8080", "cloud_one.jar"]
+ENTRYPOINT ["java", "-jar", "-Dserver.port=3030", "cloud_one.jar"]
