@@ -70,7 +70,7 @@ jobs:
             sudo docker rm cloud_db_postgres
           fi
 
-          # Pull and run PostgreSQL container without port binding (internal network only)
+          # Run PostgreSQL container
           sudo docker run -d --name cloud_db_postgres \
             --network cloud_network \
             -e POSTGRES_DB=cloud_db \
@@ -78,8 +78,11 @@ jobs:
             -e POSTGRES_PASSWORD=jumong \
             postgres:latest
 
-          # Wait for PostgreSQL to initialize (optional, adjust if necessary)
-          sleep 10
+          # Wait for PostgreSQL to be ready (using a health check loop)
+          while ! sudo docker exec cloud_db_postgres pg_isready -U dev_user; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 5
+          done
 
           # Stop and remove any existing application container
           if [ "$(docker ps -aq -f name=cloud_one)" ]; then
