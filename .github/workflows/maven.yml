@@ -1,4 +1,4 @@
-name: Deploy to Docker Hub
+name: Deploy to Docker Hub and AWS
 
 on:
   push:
@@ -39,3 +39,61 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: docker push jumongweb/cloud_one:latest
+
+      - name: Deploy Docker Containers on AWS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PUBLIC_IPv4 }}      # Your AWS instance IP from secrets
+#          username: ${{ secrets.AWS_USER }}     # SSH username from secrets
+          key: ${{ secrets.RSA_PRIVATE_KEY }}   # SSH private key from secrets
+          port: 22                              # SSH port (default 22)
+          script: |
+            # Install Docker if not present
+            if ! command -v docker &> /dev/null; then
+              echo "Docker not found. Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+            else
+              echo "Docker is already installed."
+            fi
+
+            # Pull the latest Docker image for the app
+            echo "Pulling latest Docker image..."
+            sudo docker pull jumongweb/cloud_one:latest
+
+            # Check if PostgreSQL container is running
+            if ! sudo docker ps -q -f name=cloud-db; then
+              echo "Starting new PostgreSQL container..."
+              sudo docker run -d \
+                --name cloud-db \
+                -e POSTGRES_USER=myuser \
+                -e POSTGRES_PASSWORD=mypassword \
+                -e POSTGRES_DB=mydatabase \
+                -p 5432:5432 \
+                postgres:latest
+            else
+              echo "PostgreSQL container is already running."
+            fi
+
+            # Stop and remove the old application container if running
+            if sudo docker ps -q -f name=cloud-one-container; then
+              echo "Stopping and removing existing application container..."
+              sudo docker stop cloud-one-container
+              sudo docker rm cloud-one-container
+            fi
+
+            # Start the new application container connected to the PostgreSQL
+            echo "Running the new application container..."
+            sudo docker run -d \
+              --name cloud-one-container \
+              --link cloud-db:db \
+              -p 3030:3030 \
+              -e DB_HOST=db \
+              -e DB_PORT=5432 \
+              -e DB_USER=myuser \
+              -e DB_PASSWORD=mypassword \
+              -e DB_NAME=mydatabase \
+              jumongweb/cloud_one:latest
+
+            echo "Deployment complete. Listing running containers..."
+            sudo docker ps

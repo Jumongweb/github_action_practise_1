@@ -18,22 +18,45 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud_one
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: Lt*08161554409
-      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
     depends_on:
       - postgres
-    ports:
-      - "3030:3030"
+#    ports:
+#      - "3030:3030"
+    mem_limit: 128m
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3030/actuator/health"]
-      interval: 0s
+      interval: 30s
       timeout: 10s
       retries: 3
     restart: always
-    mem_limit: 128m
+
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+
 
 volumes:
   postgres_data:
 
+networks:
+  app-network:
+    driver: bridge
 #version: '3.8'
 #
 #services:
