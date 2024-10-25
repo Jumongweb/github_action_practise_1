@@ -50,33 +50,35 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
+          
           # Stop and remove any existing container with the same name
-          if [ "$(docker ps -aq -f name=cloud-class-container)" ]; then
-            docker stop -class-container
-            docker rm class-container
+          if [ "$(docker ps -aq -f name=cloud_one)" ]; then
+            docker stop cloud_one
+            docker rm cloud_one
           fi
-          
-          # Install PostgreSQL (or MySQL) if not installed
-               if ! command -v psql &> /dev/null; then
-               sudo apt install -y postgresql postgresql-contrib
-               sudo systemctl start postgresql
-               sudo systemctl enable postgresql
-          
+
+          # Install PostgreSQL if not installed
+          if ! command -v psql &> /dev/null; then
+            sudo apt update
+            sudo apt install -y postgresql postgresql-contrib
+            sudo systemctl start postgresql
+            sudo systemctl enable postgresql
+          fi
+
           # Create a new database and user
-               sudo -u postgres psql -c "CREATE DATABASE cloud_db;"
-               sudo -u postgres psql -c "CREATE USER dev_user WITH PASSWORD 'jumong';"
-               sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE cloud_db TO dev_user;"
-               fi
-          
+          sudo -u postgres psql -c "CREATE DATABASE cloud_db;"
+          sudo -u postgres psql -c "CREATE USER dev_user WITH PASSWORD 'jumong';"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE cloud_db TO dev_user;"
+
           # Pull and run the Docker container
-               sudo docker pull jumongweb/cloud_one:latest
-          
+          sudo docker pull jumongweb/cloud_one:latest
+
           # Run the container, passing database connection info as environment variables
-               sudo docker run -d -p 3030:3030 --name cloud_one \
-               -e DB_HOST=localhost \
-               -e DB_PORT=5432 \
-               -e DB_NAME=dev_clo \
-               -e DB_USER=dev_user \
-               -e DB_PASSWORD=jumong \
-               jumongweb/cloud_one:latest
-               EOF
+          sudo docker run -d -p 3030:3030 --name cloud_one \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=cloud_db \
+            -e DB_USER=dev_user \
+            -e DB_PASSWORD=jumong \
+            jumongweb/cloud_one:latest
+          EOF
