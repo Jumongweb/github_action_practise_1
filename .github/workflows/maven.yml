@@ -70,19 +70,13 @@ jobs:
             sudo docker rm cloud_db_postgres
           fi
 
-          # Run PostgreSQL container
+          # Pull and run PostgreSQL container without port binding
           sudo docker run -d --name cloud_db_postgres \
             --network cloud_network \
             -e POSTGRES_DB=cloud_db \
             -e POSTGRES_USER=dev_user \
             -e POSTGRES_PASSWORD=jumong \
             postgres:latest
-
-          # Wait for PostgreSQL to be ready (using a health check loop)
-          while ! sudo docker exec cloud_db_postgres pg_isready -U dev_user; do
-            echo "Waiting for PostgreSQL to be ready..."
-            sleep 5
-          done
 
           # Stop and remove any existing application container
           if [ "$(docker ps -aq -f name=cloud_one)" ]; then
@@ -93,13 +87,11 @@ jobs:
           # Pull the latest application image
           sudo docker pull jumongweb/cloud_one:latest
 
-          # Run the application container, connecting to PostgreSQL
+          # Run the application container, connecting to the PostgreSQL container
           sudo docker run -d -p 3030:3030 --name cloud_one \
             --network cloud_network \
-            -e DB_HOST=cloud_db_postgres \
-            -e DB_PORT=5432 \
-            -e DB_NAME=cloud_db \
-            -e DB_USER=dev_user \
-            -e DB_PASSWORD=jumong \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://cloud_db_postgres:5432/cloud_db \
+            -e SPRING_DATASOURCE_USERNAME=dev_user \
+            -e SPRING_DATASOURCE_PASSWORD=jumong \
             jumongweb/cloud_one:latest
           EOF
